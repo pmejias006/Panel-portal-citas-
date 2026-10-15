@@ -2,7 +2,7 @@
 window.ECR_CONFIG = {
   // URL de la aplicación web de Apps Script (termina en /exec). Pasos en README.md.
   // Si la dejas vacía, el panel muestra datos de ejemplo.
-  api: '',
+  api: 'https://script.google.com/macros/s/AKfycbwk2DlH3feIgcnbNXx4Oft8GbmH6nmZYTVoHcGaIJKFOpt0IiAI2Ttdp4kOJUbaFEIxXw/exec',
 
   refrescarMin: 2,                  // cada cuántos minutos se recargan los datos
   horario: { abre: 0, cierra: 24 }, // el formulario recibe solicitudes las 24 horas
