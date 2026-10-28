@@ -33,6 +33,13 @@ window.ECR_CONFIG = {
   disponibilidadId: '12sbYaSCeaI5ZG0E_8mCLoICaJMNVSwP8j-SjmS0O7ac',
   centros: { 'CCS-BOY-OPE': 'La Boyera', 'CCS-SB-CEMAEX': 'San Bernardino', 'CCS-GUA-LYP': 'Guaicay', 'VLN-OPE-V': 'Valencia', 'MCY-OPE-M': 'Maracay', 'MAR-ALI-M': 'Maracaibo' },
   descansoDesde: '12:00',  // inicio del descanso; su duración sale de la columna "Descanso" del Drive
+  // Bloques del plano y duración del mantenimiento por centro, en minutos (los demás usan bloques de 60)
+  pasoMin: { 'San Bernardino': 30 },
+  duracionMant: { 'San Bernardino': 30 },
+  // Bahías aptas para montar Changan por centro, y placas Changan (además de las que el formulario marque como Changan)
+  bahiasMoto: { 'San Bernardino': [9] },
+  bahiasChangan: { 'San Bernardino': [2, 4] },
+  placasChangan: ['AP650NB', 'AP628NB', 'AD361TF', 'AD372TF', 'AD676NF', 'AD681NF', 'AD690NF', 'AD707NF', 'AD711NF', 'AD725NF', 'AD733NF', 'AE159HR', 'AE171HR', 'AE180HR', 'AE184HR', 'AE189HR', 'AP370EB', 'AP617NB', 'AP624BN', 'AP629NB', 'AP635NB', 'AP641NB', 'AP647NB', 'AD204NF', 'AD380TF', 'AE264CR', 'AD679NF'],
 
   horasPorServicio: 2,
   capacidad: {
