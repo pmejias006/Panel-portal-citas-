@@ -32,7 +32,7 @@ const DISPONIBILIDAD = { id: '12sbYaSCeaI5ZG0E_8mCLoICaJMNVSwP8j-SjmS0O7ac', sem
 
 // Resumen con IA (opcional). Guarda tu clave en Propiedades del script como CLAUDE_API_KEY.
 const MODELO_IA = 'claude-haiku-4-5-20251001';
-const PROMPT_IA = 'Eres asistente de postventa de Emprende con Ridery. Con las respuestas del formulario, escribe una o dos oraciones cortas para pegar en una orden de servicio de taller. Incluye solo el servicio solicitado (por ejemplo: Mantenimiento de 5.000 km) y lo que reporta el conductor sobre la falla, con desde cuándo ocurre. No incluyas placa, vehículo, conductor, ciudad, teléfono ni kilometraje actual. No inventes datos.';
+const PROMPT_IA = 'Eres asistente de postventa de Emprende con Ridery. Con las respuestas del formulario, escribe una o dos oraciones cortas para pegar en una orden de servicio de taller. Si es mantenimiento, empieza con Mantenimiento preventivo y el kilometraje del servicio (por ejemplo: Mantenimiento preventivo de 95.000 km). Agrega siempre el síntoma o falla que reporta el conductor, con desde cuándo ocurre. No incluyas placa, vehículo, conductor, ciudad, teléfono ni kilometraje actual. No inventes datos.';
 
 
 // Encabezado exacto de cada dato. Si lo dejas vacío, se busca por palabras clave.
@@ -42,7 +42,7 @@ const COLUMNAS = {
 };
 
 // Columnas que el panel agrega al final de cada pestaña para guardar la gestión.
-const GESTION = { estado: 'Estado de gestión', taller: 'Taller asignado', fecha: 'Fecha de la cita', hora: 'Hora de la cita', primera: 'Aceptó primera cita', kmIngreso: 'Km al ingreso', resumen: 'Resumen para la orden', trabajos: 'Trabajos a realizar', obs: 'Observación de la cita', hist: 'Historial de la cita', servicio: 'Servicio', dur: 'Duración (min)', bahia: 'Bahía', rec: 'Atiende', act: 'Actualizado' };
+const GESTION = { estado: 'Estado de gestión', taller: 'Taller asignado', fecha: 'Fecha de la cita', hora: 'Hora de la cita', primera: 'Aceptó primera cita', kmIngreso: 'Km al ingreso', resumen: 'Resumen para la orden', trabajos: 'Trabajos a realizar', obs: 'Observación de la cita', hist: 'Historial de la cita', servicio: 'Servicio', dur: 'Duración (min)', bahia: 'Bahía', rec: 'Atiende', por: 'Agendado por', act: 'Actualizado' };
 const GEST_NOMBRES = Object.keys(GESTION).map(k => GESTION[k]);
 
 const BUSCAR = {
@@ -147,7 +147,7 @@ function actualizar(q) {
     if (q.trabajos !== undefined) sh.getRange(fila, g.trabajos + 1).setValue(q.trabajos);
     if (q.obs !== undefined) sh.getRange(fila, g.obs + 1).setValue(q.obs);
     if (q.hist !== undefined) sh.getRange(fila, g.hist + 1).setValue(q.hist);
-    if (q.servicio) put('servicio', q.servicio); if (q.dur) put('dur', Number(q.dur)); if (q.bahia) put('bahia', Number(q.bahia)); if (q.rec) put('rec', q.rec === 'ayu' ? 'Ayudante' : 'Técnico');
+    if (q.servicio) put('servicio', q.servicio); if (q.dur) put('dur', Number(q.dur)); if (q.bahia) put('bahia', Number(q.bahia)); if (q.rec) put('rec', q.rec === 'ayu' ? 'Ayudante' : 'Técnico'); if (q.por) put('por', q.por);
     put('fecha', q.fecha);
     if (q.hora) put('hora', "'" + q.hora);
     if (q.primera !== undefined) put('primera', q.primera ? 'Sí' : 'No');
@@ -230,7 +230,8 @@ function registro(h, fila, r, d, col, g, tz, head) {
       servicio: String(r[g.servicio] || '').trim(),
       dur: numero(r[g.dur]),
       bahia: numero(r[g.bahia]),
-      rec: /ayud/i.test(String(r[g.rec] || '')) ? 'ayu' : 'tec'
+      rec: /ayud/i.test(String(r[g.rec] || '')) ? 'ayu' : 'tec',
+      por: String(r[g.por] || '').trim()
     } : null,
     primera: /^(s[ií]|true)/i.test(String(r[g.primera] || '')),
     kmAct: numero(r[g.kmIngreso]),
@@ -314,7 +315,7 @@ function crearCita(q) {
     const put = (k, v) => { if (v !== undefined && v !== null && v !== '') sh.getRange(fila, g[k] + 1).setValue(v); };
     put('estado', 'Agendada'); put('taller', q.taller); put('fecha', q.fecha); if (q.hora) put('hora', "'" + q.hora);
     put('trabajos', q.trabajos); put('obs', q.obs); put('primera', 'Sí'); put('act', new Date());
-    put('servicio', q.servicio); put('dur', q.dur); put('bahia', q.bahia); put('rec', q.rec === 'ayu' ? 'Ayudante' : 'Técnico');
+    put('servicio', q.servicio); put('dur', q.dur); put('bahia', q.bahia); put('rec', q.rec === 'ayu' ? 'Ayudante' : 'Técnico'); put('por', q.por);
     return { ok: true, id: codigo };
   } finally {
     lock.releaseLock();

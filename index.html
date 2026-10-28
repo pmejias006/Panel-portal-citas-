@@ -466,7 +466,7 @@ dialog.plano[open]{display:flex}
     <section data-view="config" hidden>
       <div class="vhd"><div><h1>Configuración</h1><p class="muted">Solo el administrador ve esta sección.</p></div></div>
       <div class="cgrid">
-        <form class="panel" id="pwForm"><div class="ph"><div><h2>Contraseñas de acceso</h2><p>Deja en blanco la que no quieras cambiar.</p></div></div>
+        <form class="panel" id="pwForm"><div class="ph"><div><h2>Contraseñas de acceso</h2><p>Deja en blanco la que no quieras cambiar.</p><p class="hint" id="pwModo"></p></div></div>
           <label class="field"><span>Nueva contraseña de administrador</span><input class="input" type="password" id="pwA" autocomplete="new-password"></label>
           <label class="field"><span>Nueva contraseña de consultor</span><input class="input" type="password" id="pwC" autocomplete="new-password"></label>
           <button class="btn primary" type="submit">Guardar contraseñas</button></form>
@@ -521,7 +521,7 @@ dialog.plano[open]{display:flex}
           <label class="field"><span>Estado</span><select class="select" id="gEst"></select></label>
           <div id="gCita">
             <div class="two"><label class="field"><span>Servicio</span><input class="input" id="fServ" list="catList" placeholder="Código o nombre del catálogo"></label><label class="field"><span>Atiende</span><select class="select" id="fRec"><option value="tec">Técnico</option><option value="ayu">Ayudante</option></select></label></div>
-            <p class="hint sv" id="fDurTxt"></p><input type="hidden" id="fDur"><input type="hidden" id="fBah">
+            <p class="hint sv" id="fDurTxt"></p><label class="field"><span>Tiempo en la bahía</span><select class="select" id="fDur"></select></label><input type="hidden" id="fBah">
             <label class="field"><span>Taller</span><select class="select" id="fTaller"></select><span class="hint" id="fHint"></span></label>
             <div class="two"><label class="field"><span>Fecha</span><input class="input" type="date" id="fFecha"></label><label class="field"><span>Hora</span><input class="input" type="time" id="fHora"></label></div>
             <div class="plpick"><button type="button" class="btn" id="fPlano"><i data-ic="grid"></i>Elegir bahía y hora en el plano</button><span class="muted" id="fBahTxt"></span></div>
@@ -560,7 +560,7 @@ dialog.plano[open]{display:flex}
       <div class="gd-side">
         <label class="field"><span>Ciudad</span><select class="select" id="nCiu"></select></label>
         <div class="two"><label class="field"><span>Servicio</span><input class="input" id="nServ" list="catList" placeholder="Código o nombre"></label><label class="field"><span>Atiende</span><select class="select" id="nRec"><option value="tec">Técnico</option><option value="ayu">Ayudante</option></select></label></div>
-        <p class="hint sv" id="nDurTxt"></p><input type="hidden" id="nDur"><input type="hidden" id="nBah">
+        <p class="hint sv" id="nDurTxt"></p><label class="field"><span>Tiempo en la bahía</span><select class="select" id="nDur"></select></label><input type="hidden" id="nBah">
         <label class="field"><span>Taller *</span><select class="select" id="nTal" required></select></label>
         <div class="two"><label class="field"><span>Fecha *</span><input class="input" type="date" id="nFec" required></label><label class="field"><span>Hora *</span><input class="input" type="time" id="nHor" required></label></div>
         <div class="plpick"><button type="button" class="btn" id="nPlano"><i data-ic="grid"></i>Elegir en el plano</button><span class="muted" id="nBahTxt"></span></div>
@@ -1056,7 +1056,7 @@ $('excForm').addEventListener('submit', e => {
 const CATM = new Map(CAT.map(s => [s[0], s]));
 const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const codeOf = v => String(v || '').split(' — ')[0].trim().toUpperCase();
-const durTxt = min => `${min} min`;
+const durTxt = min => { min = +min; const h = Math.floor(min / 60), m = min % 60; return !h ? `${min} min` : `${h} h${m ? ` ${m} min` : ''}`; };
 function planDe(x) { const t = respuestas(x).map(p => p[1]).join(' ').toLowerCase(); return /changan/.test(t) ? 'CHAN' : /\bmg\b/.test(t) ? 'MG' : /dena/.test(t) ? 'DENA' : /premium/.test(t) ? 'PREM' : /baratico|barato/.test(t) ? 'BARAT' : ''; }
 function sugServ(x) {
   const moto = x.vehiculo === 'moto', k = kmEstado(x), F = Object.assign({ intervalo: 5000 }, CFG.formulaCita || {});
@@ -1075,7 +1075,7 @@ const servDe = x => (x.cita && x.cita.servicio && CATM.get(x.cita.servicio)) || 
 const durDe = x => (x.cita && +x.cita.dur) || (servDe(x) || [0, 0, 0, 0, 60])[4];
 ['fServ','nServ'].forEach(id => { const e = document.getElementById(id); if (!e || e.dataset.dl) return; e.dataset.dl = 1; e.addEventListener('focus', () => { e.dataset.prev = e.value; e.value = ''; }); e.addEventListener('blur', () => { if (!e.value && e.dataset.prev) { e.value = e.dataset.prev; e.dispatchEvent(new Event('input', { bubbles: true })); } }); });
 function catOpts(veh) { $('catList').innerHTML = CAT.filter(s => !veh || s[3].toLowerCase() === veh).map(s => `<option value="${esc(s[0])} — ${esc(s[1])}"></option>`).join(''); }
-function servTxt(p) { const d = +$(p + 'Dur').value || 60, s = CATM.get(codeOf($(p + 'Serv').value)), t = $(p === 'f' ? 'fTaller' : 'nTal').value, tp = p === 'f' ? (CUR && CUR.tipo) : $('nTipo').value, ov = tp === 'mant' && +((CFG.duracionMant || DURM0)[t]); $(p + 'DurTxt').textContent = `Duración del catálogo: ${durTxt(d)}.${s ? ` ${s[6]}, ${s[5].toLowerCase()}.` : ''}${ov ? ` En ${t} el mantenimiento dura ${ov} min.` : ''}`; }
+function servTxt(p) { const d = +$(p + 'Dur').value || 60, s = CATM.get(codeOf($(p + 'Serv').value)), t = $(p === 'f' ? 'fTaller' : 'nTal').value, tp = p === 'f' ? (CUR && CUR.tipo) : $('nTipo').value, ov = tp === 'mant' && +((CFG.duracionMant || DURM0)[t]); $(p + 'DurTxt').textContent = `Tiempo asignado: ${durTxt(d)}.${s ? ` ${s[6]}, ${s[5].toLowerCase()}.` : ''}${ov ? ` En ${t} el mantenimiento dura ${ov} min.` : ''}`; }
 function bahTxt(p) { const f = p === 'f', H = $(f ? 'fHora' : 'nHor').value, t = $(f ? 'fTaller' : 'nTal').value, R = recDia(t, $(f ? 'fFecha' : 'nFec').value), ps = (R && R.paso) || 60, d = +$(p + 'Dur').value || durPara(f ? (CUR && CUR.tipo) : $('nTipo').value, t, 60), n = Math.max(1, Math.ceil(d / ps)), b = $(p + 'Bah').value; $(p + 'BahTxt').textContent = b && H ? `Bahía ${b}, de ${horaMsg(H)} a ${sp(horaMsg(hhmm(hm(H) + n * ps)))}.` : 'Sin bahía elegida: al guardar se asigna la primera libre.'; }
 function recDia(t, f) {
   const c = capDe(t); if (!c || !f) return null;
@@ -1245,6 +1245,14 @@ $('bhCsv').addEventListener('click', () => {
   const txt = '\ufeff' + [head, [], cols].concat(L).map(r => r.map(q).join(';')).join('\r\n');
   bahBajar(new Blob([txt], { type: 'text/csv;charset=utf-8' }), bahNombre('csv'));
 });
+
+['nDur', 'fDur'].forEach(id => {
+  const e = $(id); if (!e) return; const D = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  const fill = () => { const v = [30, 60, 90, 120, 150, 180, 210, 240, 300, 360, 420, 480, 540, 600]; e.innerHTML = v.map(x => `<option value="${x}">${durTxt(x)}</option>`).join(''); };
+  const ensure = v => { v = String(Math.round(+v || 0)); if (+v > 0 && ![...e.options].some(o => o.value === v)) { const o = new Option(durTxt(v), v); const nx = [...e.options].find(o2 => +o2.value > +v); e.add(o, nx || null); } return v; };
+  fill(); Object.defineProperty(e, 'value', { get() { return D.get.call(e); }, set(v) { if (v === '' || v == null) { D.set.call(e, ''); return; } D.set.call(e, ensure(v)); } });
+  e.addEventListener('change', () => { e.dataset.man = '1'; const p = id[0]; const b = $(p + 'Bah'); if (b) b.value = ''; try { if (p === 'n') { if (typeof servTxt === 'function') servTxt('n'); if (typeof bahTxt === 'function') bahTxt('n'); if (typeof ncUI === 'function') ncUI(); } else { if (typeof servTxt === 'function') servTxt('f'); if (typeof fCapUI === 'function') fCapUI(); } } catch (err) { console.warn(err); } });
+});
 function renderBah() {
   const ts = Object.values(TALLERES).flat().filter(t => capDe(t)); if (!ts.length) return;
   if (!ts.includes(BH.taller)) BH.taller = ts[0]; if (!BH.fecha) BH.fecha = iso(new Date());
@@ -1286,8 +1294,8 @@ function impParse() {
     const h0 = /(\d{1,2}):(\d{2})\s*([ap])\.?\s*m\.?/i.exec(l) || /\b(\d{1,2}):(\d{2})\b/.exec(l), pl = /\b([A-Z]{2}\d{3}[A-Z]{2}|A[A-Z]\d[A-Z]\d{2}[A-Z])\b/i.exec(l);
     if (!pl) { if (prev && !h0 && !/^total/i.test(l)) prev.extra.push(l); return; }
     let h = h0 ? +h0[1] : null; if (h0 && h0[3]) { const pm = /p/i.test(h0[3]); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    const placa = pl[1].toUpperCase(), resto = l.slice(pl.index + pl[0].length).trim(), km = /(\d{1,3}(?:\.\d{3})+|\d+)\s*km/i.exec(resto), kmv = km ? +km[1].replace(/\./g, '') : null;
-    prev = { hora: h != null ? `${String(h).padStart(2, '0')}:${h0[2]}` : (prev ? prev.hora : ''), placa, tipo: /mtto|manten|prev/i.test(resto) || kmv ? 'mant' : 'falla', km: kmv, vehiculo: /^A[A-Z]\d[A-Z]\d{2}[A-Z]$/.test(placa) ? 'moto' : 'carro', desc: resto.replace(/^(mtto|mantenimiento)[^,;]*?km\.?\s*/i, '').replace(/^[,;:\-–\s]+/, '').trim(), extra: [] };
+    const placa = pl[1].toUpperCase(), bfm = /\b(?:bah[ií]a|b)\s*(\d{1,2})\b/i.exec(l), resto = l.slice(pl.index + pl[0].length).replace(/\b(?:bah[ií]a|b)\s*\d{1,2}\b(\s*\([^)]*\))?/ig, '').trim(), km = /(\d{1,3}(?:\.\d{3})+|\d+)\s*km/i.exec(resto), kmv = km ? +km[1].replace(/\./g, '') : null;
+    prev = { bf: bfm ? +bfm[1] : null, hora: h != null ? `${String(h).padStart(2, '0')}:${h0[2]}` : (prev ? prev.hora : ''), placa, tipo: /mtto|manten|prev/i.test(resto) || kmv ? 'mant' : 'falla', km: kmv, vehiculo: /^A[A-Z]\d[A-Z]\d{2}[A-Z]$/.test(placa) ? 'moto' : 'carro', desc: resto.replace(/^(mtto|mantenimiento)[^,;]*?km\.?\s*/i, '').replace(/^[,;:\-–\s]+/, '').trim(), extra: [] };
     out.push(prev);
   });
   return out.map(o => Object.assign(o, { desc: [o.desc].concat(o.extra).filter(Boolean).join('; ') }));
@@ -1299,12 +1307,12 @@ function impUI() {
   IMP.forEach((o, i) => {
     const ex = DATA.filter(y => y.placa === o.placa && ENCURSO.includes(y.estado));
     o.match = ex.find(y => SIN_CITA.includes(y.estado)) || null; o.yaCita = ex.find(y => y.estado === 'agendada' || y.estado === 'taller') || null;
-    o.servicio = sugServ({ tipo: o.tipo, vehiculo: (o.match || o).vehiculo, prox: o.km, km: null, desc: o.desc, resp: o.match ? o.match.resp : [] });
+    o.servicio = sugServ({ placa: o.placa, tipo: o.tipo, vehiculo: (o.match || o).vehiculo, prox: o.km, km: null, desc: o.desc, resp: o.match ? o.match.resp : [] });
     o.dur = durPara(o.tipo, t, (CATM.get(o.servicio) || [0, 0, 0, 0, 60])[4]);
     o.ch = claseB(o); if (!o.hora && R0 && R0.abierto) { const g = o.ch ? 's' : 'n', L = R0.starts.length, i0 = Math.floor(kk[g]++ * L / Math.max(1, cnt[g])); for (let j = 0; j < L; j++) { const st = R0.starts[(i0 + j) % L]; if (autoBahia(t, f, hhmm(st), o.dur, 'tec', o.match ? o.match.id : null, o.tipo, o.ch)) { o.hora = hhmm(st); o.sug = true; break; } } }
-    const id = o.match ? o.match.id : null, v = validarCita({ taller: t, fecha: f, hora: o.hora, tipo: o.tipo, vehiculo: (o.match || o).vehiculo, dur: o.dur, rec: 'tec', id, ch: o.ch });
+    const id = o.match ? o.match.id : null, v = validarCita({ taller: t, fecha: f, hora: o.hora, tipo: o.tipo, vehiculo: (o.match || o).vehiculo, dur: o.dur, rec: 'tec', id, ch: o.ch, bahia: o.bf || '' });
     o.err = !o.hora ? 'No hay espacio libre ese día' : v.errores[0] || (o.yaCita ? `Ya tiene cita el ${fechaMsg(o.yaCita.cita.fecha)}${o.yaCita.cita.taller ? ' en ' + o.yaCita.cita.taller : ''}` : '');
-    o.bahia = o.err ? '' : autoBahia(t, f, o.hora, o.dur, 'tec', id, o.tipo, o.ch);
+    o.bahia = o.err ? '' : (o.bf || autoBahia(t, f, o.hora, o.dur, 'tec', id, o.tipo, o.ch));
     if (!o.err && !o.bahia) o.err = 'No hay bahía libre a esa hora';
     const k = o.placa; o.sel = IMPSEL[k] !== undefined ? IMPSEL[k] : !o.err;
     if (o.bahia) { const ph = { id: '__imp' + i, placa: o.placa, tipo: o.tipo, estado: 'agendada', cita: { taller: t, fecha: f, hora: o.hora, dur: o.dur, bahia: o.bahia, rec: 'tec' } }; DATA.push(ph); tmp.push(ph); }
@@ -1473,10 +1481,21 @@ $('loginForm').addEventListener('submit', async e => {
   sess.set({ role: ROLE, clave: CLAVE }); $('pw').value = ''; err.textContent = ''; enter();
 });
 $('logout').addEventListener('click', salir);
+{ const pm = $('pwModo'); if (pm) pm.textContent = API ? 'Se guarda en Google (Apps Script) y aplica para todos los usuarios y computadoras.' : 'Modo sin conexión: el cambio solo aplica en este navegador. Para que aplique a todos, el panel debe estar conectado al Apps Script.'; }
 $('pwForm').addEventListener('submit', async e => {
   e.preventDefault(); const a = $('pwA').value.trim(), c = $('pwC').value.trim();
   if (!a && !c) return toast('Escribe al menos una contraseña nueva.');
-  if (API) { try { await api({ accion: 'clave', admin: a, consultor: c }); if (a && ROLE === 'admin') { CLAVE = a; sess.set({ role: ROLE, clave: a }); } e.target.reset(); toast('Contraseñas actualizadas para todos los usuarios.'); } catch (err) { toast('No se pudo cambiar la contraseña. Intenta de nuevo.'); } return; }
+  if (API) {
+    const btn = e.target.querySelector('[type=submit]'); if (btn) btn.disabled = true;
+    try {
+      await api({ accion: 'clave', admin: a, consultor: c });
+      const prueba = async (rol, clave) => { const r = await fetch(API, { method: 'POST', body: JSON.stringify({ rol, clave, accion: 'datos' }) }); const j = await r.json(); return !!j.ok; };
+      const okA = !a || await prueba('admin', a), okC = !c || await prueba('consultor', c);
+      if (okA && okC) { if (a && ROLE === 'admin') { CLAVE = a; sess.set({ role: ROLE, clave: a }); } e.target.reset(); toast('Listo: la contraseña nueva quedó guardada en Google y ya funciona para todos.'); }
+      else toast('El script no guardó la contraseña. Publica la versión nueva de Code.gs en Apps Script (Implementar → Administrar implementaciones → Nueva versión) e intenta otra vez.');
+    } catch (err) { toast(err.message === 'permiso' ? 'Solo el administrador puede cambiar contraseñas.' : err.message === 'accion' ? 'El Apps Script publicado es una versión vieja que no sabe cambiar contraseñas. Publica el Code.gs nuevo como nueva versión.' : 'No se pudo cambiar la contraseña: ' + err.message); }
+    if (btn) btn.disabled = false; return;
+  }
   if (a) PW.admin = hash(a); if (c) PW.consultor = hash(c);
   store.set('pw', { admin: PW.admin, consultor: PW.consultor }); e.target.reset(); toast('Contraseñas actualizadas en este navegador.');
 });
